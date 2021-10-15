@@ -94,9 +94,9 @@ def configure_log_folder(args):
     if os.path.isdir(log_folder):
         if args.override_cache:
             shutil.rmtree(log_folder, ignore_errors=True)
-        else:
-            raise RuntimeError("Experiment with the same name exists: {}"
-                               .format(log_folder))
+        # else:
+        #     raise RuntimeError("Experiment with the same name exists: {}"
+        #                        .format(log_folder))
     os.makedirs(log_folder)
     return log_folder
 
@@ -138,7 +138,8 @@ def get_configs():
                         const=True, default=False)
     parser.add_argument('--workers', default=4, type=int,
                         help='number of data loading workers (default: 4)')
-    print("z")
+    parser.add_argument('--test', default=False, type=bool,
+                        help='training and testing or just testing')
     # Data
     parser.add_argument('--dataset_name', type=str, default='CUB',
                         choices=_DATASET_NAMES)
