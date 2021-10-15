@@ -35,6 +35,13 @@ import wsol
 import wsol.method
 
 
+from wsol.backbone.resnet import build_resnet_backbone
+from wsol.config import get_cfg
+import wsol.fpn
+from wsol.layers import ShapeSpec
+import model_zoo
+
+
 def set_random_seed(seed):
     if seed is None:
         return
@@ -113,16 +120,19 @@ class Trainer(object):
     def _set_model(self):
         num_classes = self._NUM_CLASSES_MAPPING[self.args.dataset_name]
         print("Loading model {}".format(self.args.architecture))
-        model = wsol.__dict__[self.args.architecture](
-            dataset_name=self.args.dataset_name,
-            architecture_type=self.args.architecture_type,
-            pretrained=self.args.pretrained,
-            num_classes=num_classes,
-            large_feature_map=self.args.large_feature_map,
-            pretrained_path=self.args.pretrained_path,
-            adl_drop_rate=self.args.adl_drop_rate,
-            adl_drop_threshold=self.args.adl_threshold,
-            acol_drop_threshold=self.args.acol_threshold)
+        cfg = model_zoo.get_config("Misc/scratch_mask_rcnn_R_50_FPN_3x_gn.yaml")
+        
+        model = build_resnet_backbone(cfg, ShapeSpec(channels=3))
+        # model = wsol.__dict__[self.args.architecture](
+        #     dataset_name=self.args.dataset_name,
+        #     architecture_type=self.args.architecture_type,
+        #     pretrained=self.args.pretrained,
+        #     num_classes=num_classes,
+        #     large_feature_map=self.args.large_feature_map,
+        #     pretrained_path=self.args.pretrained_path,
+        #     adl_drop_rate=self.args.adl_drop_rate,
+        #     adl_drop_threshold=self.args.adl_threshold,
+        #     acol_drop_threshold=self.args.acol_threshold)
         model = model.cuda()
         model = nn.DataParallel(model)
         print(model)

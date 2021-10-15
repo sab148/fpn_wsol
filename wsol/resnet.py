@@ -80,6 +80,7 @@ class ResNetCam(nn.Module):
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
 
         self.layer1 = self._make_layer(block, 64, layers[0], stride=1)
+        print(self.layer1[-1].bn3)
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=stride_l3)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=1)
@@ -469,9 +470,9 @@ def load_pretrained_model(model, wsol_method, path=None, **kwargs):
     model.load_state_dict(state_dict, strict=strict_rule)
     return model
 
-
 def resnet50(architecture_type, pretrained=False, pretrained_path=None,
              **kwargs):
+    print("je suis laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
     model = {'cam': ResNetCam,
              'acol': ResNetAcol,
              'spg': ResNetSpg,
@@ -481,3 +482,8 @@ def resnet50(architecture_type, pretrained=False, pretrained_path=None,
         model = load_pretrained_model(model, architecture_type,
                                       path=pretrained_path, **kwargs)
     return model
+
+
+if __name__ == '__main__':
+    model = resnet50('cam')
+    print(model)
