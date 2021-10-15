@@ -138,7 +138,7 @@ def get_configs():
                         const=True, default=False)
     parser.add_argument('--workers', default=4, type=int,
                         help='number of data loading workers (default: 4)')
-
+    print("z")
     # Data
     parser.add_argument('--dataset_name', type=str, default='CUB',
                         choices=_DATASET_NAMES)
