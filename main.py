@@ -122,7 +122,7 @@ class Trainer(object):
         print("Loading model {}".format(self.args.architecture))
         cfg = model_zoo.get_config("Misc/scratch_mask_rcnn_R_50_FPN_3x_gn.yaml")
         
-        model = build_resnet_backbone(cfg, ShapeSpec(channels=3))
+        model = build_resnet_backbone(cfg, ShapeSpec(channels=3), num_classes=num_classes)
         # model = wsol.__dict__[self.args.architecture](
         #     dataset_name=self.args.dataset_name,
         #     architecture_type=self.args.architecture_type,

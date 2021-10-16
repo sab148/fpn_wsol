@@ -115,6 +115,7 @@ class BottleneckBlock(CNNBlockBase):
         norm="BN",
         stride_in_1x1=False,
         dilation=1,
+        large_feature=False,
     ):
         """
         Args:
@@ -128,13 +129,13 @@ class BottleneckBlock(CNNBlockBase):
             dilation (int): the dilation rate of the 3x3 conv layer.
         """
         super().__init__(in_channels, out_channels, stride)
-
+        shortcut_stride = 2 if large_feature else 1
         if in_channels != out_channels:
             self.shortcut = Conv2d(
                 in_channels,
                 out_channels,
                 kernel_size=1,
-                stride=stride,
+                stride=shortcut_stride,
                 bias=False,
                 norm=get_norm(norm, out_channels),
             )
@@ -364,7 +365,7 @@ class ResNet(Backbone):
     Implement :paper:`ResNet`.
     """
 
-    def __init__(self, stem, stages, num_classes=None, out_features=None, freeze_at=0):
+    def __init__(self, stem, stages, num_classes=200, out_features=None, freeze_at=0):
         """
         Args:
             stem (nn.Module): a stem module
@@ -455,7 +456,7 @@ class ResNet(Backbone):
             x = self.linear(x)
             if "linear" in self._out_features:
                 outputs["linear"] = x
-        return outputs
+        return {"logits": x}
 
     def output_shape(self):
         return {
@@ -611,7 +612,7 @@ def make_stage(*args, **kwargs):
 
 
 #@BACKBONE_REGISTRY.register()
-def build_resnet_backbone(cfg, input_shape):
+def build_resnet_backbone(cfg, input_shape, num_classes=1000):
     """
     Create a ResNet instance from config.
 
@@ -660,17 +661,22 @@ def build_resnet_backbone(cfg, input_shape):
         assert num_groups == 1, "Must set MODEL.RESNETS.NUM_GROUPS = 1 for R18/R34"
 
     stages = []
+    stride = [[1,1,1],[2,1,1,1],[1,1,1,1,1,1],[1,1,1]]
 
     for idx, stage_idx in enumerate(range(2, 6)):
         # res5_dilation is used this way as a convention in R-FCN & Deformable Conv paper
         dilation = res5_dilation if stage_idx == 5 else 1
         first_stride = 1 if idx == 0 or (stage_idx == 5 and dilation == 2) else 2
+        large_feature= True if idx==1 else False
+
+        
         stage_kargs = {
             "num_blocks": num_blocks_per_stage[idx],
-            "stride_per_block": [first_stride] + [1] * (num_blocks_per_stage[idx] - 1),
+            "stride_per_block": stride[idx], #[first_stride] + [1] * (num_blocks_per_stage[idx] - 1),
             "in_channels": in_channels,
             "out_channels": out_channels,
             "norm": norm,
+            "large_feature": large_feature,
         }
         # Use BasicBlock for R18 and R34.
         if depth in [18, 34]:
@@ -691,4 +697,5 @@ def build_resnet_backbone(cfg, input_shape):
         out_channels *= 2
         bottleneck_channels *= 2
         stages.append(blocks)
-    return ResNet(stem, stages, out_features=out_features, freeze_at=freeze_at)
+
+    return ResNet(stem, stages, num_classes, out_features=out_features, freeze_at=freeze_at)
