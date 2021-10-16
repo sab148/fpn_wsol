@@ -1,11 +1,15 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
+import os
+
 import numpy as np
 import fvcore.nn.weight_init as weight_init
 import torch
 import torch.nn.functional as F
 from torch import nn
 
-from wsol.layers import (
+from torch.utils.model_zoo import load_url
+
+from detectron2.layers import (
     CNNBlockBase,
     Conv2d,
     DeformConv,
@@ -15,6 +19,7 @@ from wsol.layers import (
 )
 
 from .backbone import Backbone
+from wsol.util import remove_layer
 #from .build import BACKBONE_REGISTRY
 
 __all__ = [
@@ -27,6 +32,10 @@ __all__ = [
     "make_stage",
     "build_resnet_backbone",
 ]
+
+model_urls = {
+    'resnet50': 'https://download.pytorch.org/models/resnet50-19c8e357.pth',
+}
 
 
 class BasicBlock(CNNBlockBase):
@@ -129,18 +138,15 @@ class BottleneckBlock(CNNBlockBase):
             dilation (int): the dilation rate of the 3x3 conv layer.
         """
         super().__init__(in_channels, out_channels, stride)
+
         shortcut_stride = 2 if large_feature else 1
         if in_channels != out_channels:
-            self.shortcut = Conv2d(
-                in_channels,
-                out_channels,
-                kernel_size=1,
-                stride=shortcut_stride,
-                bias=False,
-                norm=get_norm(norm, out_channels),
+            self.downsample = nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, 1, shortcut_stride, bias=False),
+                nn.BatchNorm2d(out_channels),
             )
         else:
-            self.shortcut = None
+            self.downsample = None
 
         # The original MSRA ResNet models have stride in the first 1x1 conv
         # The subsequent fb.torch.resnet and Caffe2 ResNe[X]t implementations have
@@ -153,8 +159,9 @@ class BottleneckBlock(CNNBlockBase):
             kernel_size=1,
             stride=stride_1x1,
             bias=False,
-            norm=get_norm(norm, bottleneck_channels),
+          #  norm=get_norm(norm, bottleneck_channels),
         )
+        self.bn1 = nn.BatchNorm2d(bottleneck_channels)
 
         self.conv2 = Conv2d(
             bottleneck_channels,
@@ -165,18 +172,21 @@ class BottleneckBlock(CNNBlockBase):
             bias=False,
             groups=num_groups,
             dilation=dilation,
-            norm=get_norm(norm, bottleneck_channels),
+           # norm=get_norm(norm, bottleneck_channels),
         )
+
+        self.bn2 = nn.BatchNorm2d(bottleneck_channels)
 
         self.conv3 = Conv2d(
             bottleneck_channels,
             out_channels,
             kernel_size=1,
             bias=False,
-            norm=get_norm(norm, out_channels),
+         #   norm=get_norm(norm, out_channels),
         )
-
-        for layer in [self.conv1, self.conv2, self.conv3, self.shortcut]:
+        self.bn3 = nn.BatchNorm2d(out_channels)
+        
+        for layer in [self.conv1, self.conv2, self.conv3]:#, self.downsample]:
             if layer is not None:  # shortcut can be None
                 weight_init.c2_msra_fill(layer)
 
@@ -201,8 +211,8 @@ class BottleneckBlock(CNNBlockBase):
 
         out = self.conv3(out)
 
-        if self.shortcut is not None:
-            shortcut = self.shortcut(x)
+        if self.downsample is not None:
+            shortcut = self.downsample(x)
         else:
             shortcut = x
 
@@ -380,12 +390,23 @@ class ResNet(Backbone):
                 see :meth:`freeze` for detailed explanation.
         """
         super().__init__()
-        self.stem = stem
+        self.inplanes = 64
+
+        self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2,
+                               padding=3, bias=False)
+        self.bn1 = nn.BatchNorm2d(self.inplanes)
+        self.relu = nn.ReLU(inplace=True)
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+
+
+
+        #self.stem = stem
         self.num_classes = num_classes
 
-        current_stride = self.stem.stride
+        current_stride = 4#self.stem.stride
+      #  print("current_stride", self.stem.out_channels)
         self._out_feature_strides = {"stem": current_stride}
-        self._out_feature_channels = {"stem": self.stem.out_channels}
+        self._out_feature_channels = {"stem": 64}
 
         self.stage_names, self.stages = [], []
 
@@ -393,7 +414,7 @@ class ResNet(Backbone):
             # Avoid keeping unused layers in this module. They consume extra memory
             # and may cause allreduce to fail
             num_stages = max(
-                [{"res2": 1, "res3": 2, "res4": 3, "res5": 4}.get(f, 0) for f in out_features]
+                [{"layer1": 1, "layer2": 2, "layer3": 3, "layer4": 4}.get(f, 0) for f in out_features]
             )
             stages = stages[:num_stages]
         for i, blocks in enumerate(stages):
@@ -401,7 +422,7 @@ class ResNet(Backbone):
             for block in blocks:
                 assert isinstance(block, CNNBlockBase), block
 
-            name = "res" + str(i + 2)
+            name = "layer" + str(i + 1)
             stage = nn.Sequential(*blocks)
 
             self.add_module(name, stage)
@@ -416,12 +437,12 @@ class ResNet(Backbone):
 
         if num_classes is not None:
             self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-            self.linear = nn.Linear(curr_channels, num_classes)
+            self.fc = nn.Linear(curr_channels, num_classes)
 
             # Sec 5.1 in "Accurate, Large Minibatch SGD: Training ImageNet in 1 Hour":
             # "The 1000-way fully-connected layer is initialized by
             # drawing weights from a zero-mean Gaussian with standard deviation of 0.01."
-            nn.init.normal_(self.linear.weight, std=0.01)
+            nn.init.normal_(self.fc.weight, std=0.01)
             name = "linear"
 
         if out_features is None:
@@ -443,7 +464,13 @@ class ResNet(Backbone):
         """
         assert x.dim() == 4, f"ResNet takes an input of shape (N, C, H, W). Got {x.shape} instead!"
         outputs = {}
-        x = self.stem(x)
+        batch_size = x.shape[0]
+
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
+    #    x = self.stem(x)
         if "stem" in self._out_features:
             outputs["stem"] = x
         for name, stage in zip(self.stage_names, self.stages):
@@ -453,7 +480,7 @@ class ResNet(Backbone):
         if self.num_classes is not None:
             x = self.avgpool(x)
             x = torch.flatten(x, 1)
-            x = self.linear(x)
+            x = self.fc(x)
             if "linear" in self._out_features:
                 outputs["linear"] = x
         return {"logits": x}
@@ -611,8 +638,25 @@ def make_stage(*args, **kwargs):
     return ResNet.make_stage(*args, **kwargs)
 
 
+def load_pretrained_model(model, path=None, **kwargs):
+    strict_rule = True
+
+    if path:
+        state_dict = torch.load(os.path.join(path, 'resnet50.pth'))
+    else:
+        state_dict = load_url(model_urls['resnet50'], progress=True)
+
+    print(kwargs['dataset_name'])
+    if kwargs['dataset_name'] != 'ILSVRC':
+        state_dict = remove_layer(state_dict, 'fc')
+        strict_rule = False
+
+    model.load_state_dict(state_dict, strict=strict_rule)
+    return model
+
+
 #@BACKBONE_REGISTRY.register()
-def build_resnet_backbone(cfg, input_shape, num_classes=1000):
+def build_resnet_backbone(cfg, input_shape, num_classes=1000, pretrained=False, pretrained_path=None, **kwargs):
     """
     Create a ResNet instance from config.
 
@@ -698,4 +742,11 @@ def build_resnet_backbone(cfg, input_shape, num_classes=1000):
         bottleneck_channels *= 2
         stages.append(blocks)
 
-    return ResNet(stem, stages, num_classes, out_features=out_features, freeze_at=freeze_at)
+    model = ResNet(stem, stages, num_classes, out_features=out_features, freeze_at=freeze_at)
+
+    if pretrained:
+        model = load_pretrained_model(model, path=pretrained_path, **kwargs)
+
+    return model
+
+
