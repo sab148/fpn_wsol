@@ -4,9 +4,9 @@ from typing import Optional
 import pkg_resources
 import torch
 
-from .model_zoo import DetectionCheckpointer
+from .detection_checkpoint import DetectionCheckpointer
 from wsol.config import CfgNode, LazyConfig, get_cfg, instantiate
-from .model_zoo import build_model
+from .build import build_model
 
 
 class _ModelZooUrls(object):
