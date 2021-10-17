@@ -6,5 +6,6 @@ and optionally load their pre-trained weights.
 """
 
 from .model_zoo import  get_config_file, get_checkpoint_url, get_config
-
-__all__ = ["get_checkpoint_url", "get_config_file", "get_config"]
+from detection_checkpoint import DetectionCheckpointer
+from .build import build_model
+__all__ = ["get_checkpoint_url", "get_config_file", "get_config", "DetectionCheckpointer", "build_model"]
