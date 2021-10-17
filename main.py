@@ -35,12 +35,13 @@ import wsol
 import wsol.method
 
 
-from wsol.backbone.resnet import build_resnet_backbone
+from torch._C import memory_format
 from wsol.config import get_cfg
 import wsol.fpn
 from wsol.layers import ShapeSpec
 import model_zoo
 
+from wsol.backbone.resnet import build_resnet_backbone 
 
 def set_random_seed(seed):
     if seed is None:
@@ -120,9 +121,12 @@ class Trainer(object):
     def _set_model(self):
         num_classes = self._NUM_CLASSES_MAPPING[self.args.dataset_name]
         print("Loading model {}".format(self.args.architecture))
+
         cfg = model_zoo.get_config("Misc/scratch_mask_rcnn_R_50_FPN_3x_gn.yaml")
-        
-        model = build_resnet_backbone(cfg, ShapeSpec(channels=3), num_classes=num_classes)
+        model = build_resnet_backbone(cfg, ShapeSpec(channels=3), 
+            num_classes=num_classes, pretrained=self.args.pretrained,
+            pretrained_path=self.args.pretrained_path,
+            dataset_name=self.args.dataset_name)
         # model = wsol.__dict__[self.args.architecture](
         #     dataset_name=self.args.dataset_name,
         #     architecture_type=self.args.architecture_type,
@@ -134,7 +138,6 @@ class Trainer(object):
         #     adl_drop_threshold=self.args.adl_threshold,
         #     acol_drop_threshold=self.args.acol_threshold)
         model = model.cuda()
-        model = nn.DataParallel(model)
         print(model)
         return model
 
@@ -367,26 +370,25 @@ class Trainer(object):
 def main():
     trainer = Trainer()
 
-    if not trainer.args.test:
-        print("===========================================================")
-        print("Start epoch 0 ...")
-        trainer.evaluate(epoch=0, split='val')
-        trainer.print_performances()
-        trainer.report(epoch=0, split='val')
-        trainer.save_checkpoint(epoch=0, split='val')
-        print("Epoch 0 done.")
+    print("===========================================================")
+    print("Start epoch 0 ...")
+    trainer.evaluate(epoch=0, split='val')
+    trainer.print_performances()
+    trainer.report(epoch=0, split='val')
+    trainer.save_checkpoint(epoch=0, split='val')
+    print("Epoch 0 done.")
 
-        for epoch in range(trainer.args.epochs):
-            print("===========================================================")
-            print("Start epoch {} ...".format(epoch + 1))
-            trainer.adjust_learning_rate(epoch + 1)
-            train_performance = trainer.train(split='train')
-            trainer.report_train(train_performance, epoch + 1, split='train')
-            trainer.evaluate(epoch + 1, split='val')
-            trainer.print_performances()
-            trainer.report(epoch + 1, split='val')
-            trainer.save_checkpoint(epoch + 1, split='val')
-            print("Epoch {} done.".format(epoch + 1))
+    for epoch in range(trainer.args.epochs):
+        print("===========================================================")
+        print("Start epoch {} ...".format(epoch + 1))
+        trainer.adjust_learning_rate(epoch + 1)
+        train_performance = trainer.train(split='train')
+        trainer.report_train(train_performance, epoch + 1, split='train')
+        trainer.evaluate(epoch + 1, split='val')
+        trainer.print_performances()
+        trainer.report(epoch + 1, split='val')
+        trainer.save_checkpoint(epoch + 1, split='val')
+        print("Epoch {} done.".format(epoch + 1))
 
     print("===========================================================")
     print("Final epoch evaluation on test set ...")

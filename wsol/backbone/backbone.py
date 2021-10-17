@@ -2,7 +2,7 @@
 from abc import ABCMeta, abstractmethod
 import torch.nn as nn
 
-from detectron2.layers import ShapeSpec
+from wsol.layers import ShapeSpec
 
 __all__ = ["Backbone"]
 

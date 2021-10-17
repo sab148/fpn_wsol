@@ -9,7 +9,7 @@ from torch import nn
 
 from torch.utils.model_zoo import load_url
 
-from detectron2.layers import (
+from wsol.layers import (
     CNNBlockBase,
     Conv2d,
     DeformConv,
@@ -646,7 +646,6 @@ def load_pretrained_model(model, path=None, **kwargs):
     else:
         state_dict = load_url(model_urls['resnet50'], progress=True)
 
-    print(kwargs['dataset_name'])
     if kwargs['dataset_name'] != 'ILSVRC':
         state_dict = remove_layer(state_dict, 'fc')
         strict_rule = False
