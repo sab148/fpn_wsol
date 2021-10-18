@@ -536,7 +536,7 @@ def load_pretrained_model(model, path=None, **kwargs):
 
 
 #@BACKBONE_REGISTRY.register()
-def build_resnet_backbone(cfg, input_shape, num_classes=1000, pretrained=False, pretrained_path=None, **kwargs):
+def build_resnet_backbone(input_shape, num_classes=1000, pretrained=False, pretrained_path=None, **kwargs):
     """
     Create a ResNet instance from config.
 
@@ -544,27 +544,27 @@ def build_resnet_backbone(cfg, input_shape, num_classes=1000, pretrained=False, 
         ResNet: a :class:`ResNet` instance.
     """
     # need registration of new blocks/stems?
-    norm = cfg.MODEL.RESNETS.NORM
+    norm = "GN"
     stem = BasicStem(
         in_channels=input_shape.channels,
-        out_channels=cfg.MODEL.RESNETS.STEM_OUT_CHANNELS,
+        out_channels=64,
         norm=norm,
     )
 
     # fmt: off
-    freeze_at           = cfg.MODEL.BACKBONE.FREEZE_AT
-    out_features        = cfg.MODEL.RESNETS.OUT_FEATURES
-    depth               = cfg.MODEL.RESNETS.DEPTH
-    num_groups          = cfg.MODEL.RESNETS.NUM_GROUPS
-    width_per_group     = cfg.MODEL.RESNETS.WIDTH_PER_GROUP
+    freeze_at           = 0
+    out_features        = ["layer1", "layer2", "layer3", "layer4"]
+    depth               = 50
+    num_groups          = 1
+    width_per_group     = 64
     bottleneck_channels = num_groups * width_per_group
-    in_channels         = cfg.MODEL.RESNETS.STEM_OUT_CHANNELS
-    out_channels        = cfg.MODEL.RESNETS.RES2_OUT_CHANNELS
-    stride_in_1x1       = cfg.MODEL.RESNETS.STRIDE_IN_1X1
-    res5_dilation       = cfg.MODEL.RESNETS.RES5_DILATION
-    deform_on_per_stage = cfg.MODEL.RESNETS.DEFORM_ON_PER_STAGE
-    deform_modulated    = cfg.MODEL.RESNETS.DEFORM_MODULATED
-    deform_num_groups   = cfg.MODEL.RESNETS.DEFORM_NUM_GROUPS
+    in_channels         = 64
+    out_channels        = 256
+    stride_in_1x1       = False
+    res5_dilation       = 1
+    deform_on_per_stage = [False, False, False, False]
+    deform_modulated    = False
+    deform_num_groups   = 1
     # fmt: on
     assert res5_dilation in {1, 2}, "res5_dilation cannot be {}.".format(res5_dilation)
 

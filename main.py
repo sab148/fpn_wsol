@@ -39,7 +39,6 @@ from torch._C import memory_format
 from wsol.config import get_cfg
 import wsol.fpn
 from wsol.layers import ShapeSpec
-import model_zoo
 
 from wsol.backbone.resnet import build_resnet_backbone 
 
@@ -122,8 +121,7 @@ class Trainer(object):
         num_classes = self._NUM_CLASSES_MAPPING[self.args.dataset_name]
         print("Loading model {}".format(self.args.architecture))
 
-        cfg = model_zoo.get_config("Misc/scratch_mask_rcnn_R_50_FPN_3x_gn.yaml")
-        model = build_resnet_backbone(cfg, ShapeSpec(channels=3), 
+        model = build_resnet_backbone(ShapeSpec(channels=3), 
             num_classes=num_classes, pretrained=self.args.pretrained,
             pretrained_path=self.args.pretrained_path,
             dataset_name=self.args.dataset_name)
