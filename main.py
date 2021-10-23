@@ -35,7 +35,7 @@ import wsol
 import wsol.method
 
 
-from torch._C import memory_format
+#from torch._C import memory_format
 from wsol.config import get_cfg
 import wsol.fpn
 from wsol.layers import ShapeSpec
