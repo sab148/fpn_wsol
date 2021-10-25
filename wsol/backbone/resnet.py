@@ -149,38 +149,46 @@ class BottleneckBlock(CNNBlockBase):
         # The subsequent fb.torch.resnet and Caffe2 ResNe[X]t implementations have
         # stride in the 3x3 conv
         stride_1x1, stride_3x3 = (stride, 1) if stride_in_1x1 else (1, stride)
-
-        self.conv1 = Conv2d(
-            in_channels,
-            bottleneck_channels,
-            kernel_size=1,
-            stride=stride_1x1,
-            bias=False,
-          #  norm=get_norm(norm, bottleneck_channels),
-        )
+        self.conv1 = nn.Conv2d(in_channels, bottleneck_channels, 1, bias=False)
+        # self.conv1 = Conv2d(
+        #     in_channels,
+        #     bottleneck_channels,
+        #     kernel_size=1,
+        #     stride=stride_1x1,
+        #     bias=False,
+        #   #  norm=get_norm(norm, bottleneck_channels),
+        # )
         self.bn1 = nn.BatchNorm2d(bottleneck_channels)
 
-        self.conv2 = Conv2d(
-            bottleneck_channels,
-            bottleneck_channels,
-            kernel_size=3,
-            stride=stride_3x3,
-            padding=1 * dilation,
-            bias=False,
-            groups=num_groups,
-            dilation=dilation,
-           # norm=get_norm(norm, bottleneck_channels),
-        )
+
+        self.conv2 = nn.Conv2d(bottleneck_channels, bottleneck_channels, 3, 
+            stride=stride_3x3, padding=1, bias=False)
+        
+        # self.conv2 = Conv2d(
+        #     bottleneck_channels,
+        #     bottleneck_channels,
+        #     kernel_size=3,
+        #     stride=stride_3x3,
+        #     padding=1 * dilation,
+        #     bias=False,
+        #     groups=num_groups,
+        #     dilation=dilation,
+        #    # norm=get_norm(norm, bottleneck_channels),
+        # )
 
         self.bn2 = nn.BatchNorm2d(bottleneck_channels)
 
-        self.conv3 = Conv2d(
-            bottleneck_channels,
-            out_channels,
-            kernel_size=1,
-            bias=False,
-         #   norm=get_norm(norm, out_channels),
-        )
+
+        self.conv3 = nn.Conv2d(bottleneck_channels, out_channels, bias=False)
+     
+     
+        # self.conv3 = Conv2d(
+        #     bottleneck_channels,
+        #     out_channels,
+        #     kernel_size=1,
+        #     bias=False,
+        #  #   norm=get_norm(norm, out_channels),
+        # )
         self.bn3 = nn.BatchNorm2d(out_channels)
         
         # for layer in [self.conv1, self.conv2, self.conv3]:#, self.downsample]:
