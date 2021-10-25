@@ -201,12 +201,15 @@ class BottleneckBlock(CNNBlockBase):
 
     def forward(self, x):
         out = self.conv1(x)
+        out = self.bn1(x)
         out = F.relu_(out)
 
         out = self.conv2(out)
+        out = self.bn2(x)
         out = F.relu_(out)
 
         out = self.conv3(out)
+        out = self.bn3(x)
 
         if self.downsample is not None:
             shortcut = self.downsample(x)

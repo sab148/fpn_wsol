@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Facebook, Inc. and its affiliates.
 
-import fvcore.nn.weight_init as weight_init
+#import fvcore.nn.weight_init as weight_init
 from torch import nn
 
 from .batch_norm import FrozenBatchNorm2d, get_norm
@@ -104,8 +104,8 @@ class DepthwiseSeparableConv2d(nn.Module):
         )
 
         # default initialization
-        weight_init.c2_msra_fill(self.depthwise)
-        weight_init.c2_msra_fill(self.pointwise)
+        # weight_init.c2_msra_fill(self.depthwise)
+        # weight_init.c2_msra_fill(self.pointwise)
 
     def forward(self, x):
         return self.pointwise(self.depthwise(x))

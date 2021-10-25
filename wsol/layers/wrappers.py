@@ -96,12 +96,12 @@ class Conv2d(torch.nn.Conv2d):
         # 1. currently we only support torchscript in evaluation mode
         # 2. features needed by exporting module to torchscript are added in PyTorch 1.6 or
         # later version, `Conv2d` in these PyTorch versions has already supported empty inputs.
-        if not torch.jit.is_scripting():
-            if x.numel() == 0 and self.training:
-                # https://github.com/pytorch/pytorch/issues/12013
-                assert not isinstance(
-                    self.norm, torch.nn.SyncBatchNorm
-                ), "SyncBatchNorm does not support empty inputs!"
+        # if not torch.jit.is_scripting():
+        #     if x.numel() == 0 and self.training:
+        #         # https://github.com/pytorch/pytorch/issues/12013
+        #         assert not isinstance(
+        #             self.norm, torch.nn.SyncBatchNorm
+        #         ), "SyncBatchNorm does not support empty inputs!"
 
         x = F.conv2d(
             x, self.weight, self.bias, self.stride, self.padding, self.dilation, self.groups

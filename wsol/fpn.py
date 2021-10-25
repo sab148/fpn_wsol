@@ -1,6 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 import math
-import fvcore.nn.weight_init as weight_init
+# import fvcore.nn.weight_init as weight_init
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -81,8 +81,8 @@ class FPN(Backbone):
                 bias=use_bias,
                 norm=output_norm,
             )
-            weight_init.c2_xavier_fill(lateral_conv)
-            weight_init.c2_xavier_fill(output_conv)
+            # weight_init.c2_xavier_fill(lateral_conv)
+            # weight_init.c2_xavier_fill(output_conv)
             stage = int(math.log2(strides[idx]))
             self.add_module("fpn_lateral{}".format(stage), lateral_conv)
             self.add_module("fpn_output{}".format(stage), output_conv)
@@ -233,8 +233,8 @@ class LastLevelP6P7(nn.Module):
         self.in_feature = in_feature
         self.p6 = nn.Conv2d(in_channels, out_channels, 3, 2, 1)
         self.p7 = nn.Conv2d(out_channels, out_channels, 3, 2, 1)
-        for module in [self.p6, self.p7]:
-            weight_init.c2_xavier_fill(module)
+        # for module in [self.p6, self.p7]:
+        #     weight_init.c2_xavier_fill(module)
 
     def forward(self, c5):
         p6 = self.p6(c5)

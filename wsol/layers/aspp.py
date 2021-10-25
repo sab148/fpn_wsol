@@ -1,7 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 
 from copy import deepcopy
-import fvcore.nn.weight_init as weight_init
+#import fvcore.nn.weight_init as weight_init
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -69,7 +69,7 @@ class ASPP(nn.Module):
                 activation=deepcopy(activation),
             )
         )
-        weight_init.c2_xavier_fill(self.convs[-1])
+        #weight_init.c2_xavier_fill(self.convs[-1])
         # atrous convs
         for dilation in dilations:
             if use_depthwise_separable_conv:
@@ -99,7 +99,7 @@ class ASPP(nn.Module):
                         activation=deepcopy(activation),
                     )
                 )
-                weight_init.c2_xavier_fill(self.convs[-1])
+                #weight_init.c2_xavier_fill(self.convs[-1])
         # image pooling
         # We do not add BatchNorm because the spatial resolution is 1x1,
         # the original TF implementation has BatchNorm.
@@ -113,7 +113,7 @@ class ASPP(nn.Module):
                 nn.AvgPool2d(kernel_size=pool_kernel_size, stride=1),
                 Conv2d(in_channels, out_channels, 1, bias=True, activation=deepcopy(activation)),
             )
-        weight_init.c2_xavier_fill(image_pooling[1])
+       # weight_init.c2_xavier_fill(image_pooling[1])
         self.convs.append(image_pooling)
 
         self.project = Conv2d(
@@ -124,7 +124,7 @@ class ASPP(nn.Module):
             norm=get_norm(norm, out_channels),
             activation=deepcopy(activation),
         )
-        weight_init.c2_xavier_fill(self.project)
+        #weight_init.c2_xavier_fill(self.project)
 
     def forward(self, x):
         size = x.shape[-2:]
