@@ -1,7 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 import torch
 import torch.distributed as dist
-from fvcore.nn.distributed import differentiable_all_reduce
 from torch import nn
 from torch.nn import functional as F
 
