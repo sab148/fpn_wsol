@@ -144,7 +144,7 @@ def get_configs():
     parser.add_argument('--dataset_name', type=str, default='CUB',
                         choices=_DATASET_NAMES)
     parser.add_argument('--data_root', metavar='/PATH/TO/DATASET',
-                        default='dataset/',
+                        default='/home/user058/',
                         help='path to dataset images')
     parser.add_argument('--metadata_root', type=str, default='metadata/')
     parser.add_argument('--mask_root', metavar='/PATH/TO/MASKS',
