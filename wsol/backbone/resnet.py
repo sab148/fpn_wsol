@@ -179,7 +179,7 @@ class BottleneckBlock(CNNBlockBase):
         self.bn2 = nn.BatchNorm2d(bottleneck_channels)
 
 
-        self.conv3 = nn.Conv2d(bottleneck_channels, out_channels, bias=False)
+        self.conv3 = nn.Conv2d(bottleneck_channels, out_channels, 1, bias=False)
      
      
         # self.conv3 = Conv2d(
