@@ -103,7 +103,7 @@ class BasicBlock(CNNBlockBase):
         return out
 
 
-class BottleneckBlock(nn.Module):
+class BottleneckBlock(CNNBlockBase):
     """
     The standard bottleneck residual block used by ResNet-50, 101 and 152
     defined in :paper:`ResNet`.  It contains 3 conv layers with kernels
@@ -134,7 +134,7 @@ class BottleneckBlock(nn.Module):
                 first 1x1 convolution or the bottleneck 3x3 convolution.
             dilation (int): the dilation rate of the 3x3 conv layer.
         """
-        super(BottleneckBlock, self).__init__()
+        super().__init__(in_channels, out_channels, stride)
 
         shortcut_stride = 2 if large_feature else 1
         if in_channels != out_channels:
@@ -262,7 +262,7 @@ class BasicStem(CNNBlockBase):
         return x
 
 
-class ResNet(nn.Module):
+class ResNet(Backbone):
     """
     Implement :paper:`ResNet`.
     """
@@ -281,7 +281,7 @@ class ResNet(nn.Module):
             freeze_at (int): The number of stages at the beginning to freeze.
                 see :meth:`freeze` for detailed explanation.
         """
-        super(ResNet, self).__init__()
+        super().__init__()
         self.inplanes = 64
 
         self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2,
@@ -310,10 +310,9 @@ class ResNet(nn.Module):
             )
             stages = stages[:num_stages]
         for i, blocks in enumerate(stages):
-            print("**",blocks)
             assert len(blocks) > 0, len(blocks)
-            # for block in blocks:
-            #     assert isinstance(block, CNNBlockBase), block
+            for block in blocks:
+                assert isinstance(block, CNNBlockBase), block
 
             name = "layer" + str(i + 1)
             stage = nn.Sequential(*blocks)
@@ -323,7 +322,7 @@ class ResNet(nn.Module):
             self.stages.append(stage)
 
             self._out_feature_strides[name] = current_stride = int(
-                current_stride * np.prod([self.k.stride for k in blocks])
+                current_stride * np.prod([k.stride for k in blocks])
             )
             self._out_feature_channels[name] = curr_channels = blocks[-1].out_channels
         self.stage_names = tuple(self.stage_names)  # Make it static for scripting
