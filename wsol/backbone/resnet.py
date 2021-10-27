@@ -310,6 +310,7 @@ class ResNet(nn.Module):
             )
             stages = stages[:num_stages]
         for i, blocks in enumerate(stages):
+            print("**",blocks)
             assert len(blocks) > 0, len(blocks)
             # for block in blocks:
             #     assert isinstance(block, CNNBlockBase), block
@@ -322,7 +323,7 @@ class ResNet(nn.Module):
             self.stages.append(stage)
 
             self._out_feature_strides[name] = current_stride = int(
-                current_stride * np.prod([k.stride for k in blocks])
+                current_stride * np.prod([self.k.stride for k in blocks])
             )
             self._out_feature_channels[name] = curr_channels = blocks[-1].out_channels
         self.stage_names = tuple(self.stage_names)  # Make it static for scripting
