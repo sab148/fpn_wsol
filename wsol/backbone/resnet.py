@@ -103,7 +103,7 @@ class BasicBlock(CNNBlockBase):
         return out
 
 
-class BottleneckBlock(CNNBlockBase):
+class BottleneckBlock(nn.Module):
     """
     The standard bottleneck residual block used by ResNet-50, 101 and 152
     defined in :paper:`ResNet`.  It contains 3 conv layers with kernels
@@ -134,7 +134,7 @@ class BottleneckBlock(CNNBlockBase):
                 first 1x1 convolution or the bottleneck 3x3 convolution.
             dilation (int): the dilation rate of the 3x3 conv layer.
         """
-        super().__init__(in_channels, out_channels, stride)
+        super(BottleneckBlock, self).__init__()
 
         shortcut_stride = 2 if large_feature else 1
         if in_channels != out_channels:
