@@ -346,7 +346,7 @@ class ResNet(Backbone):
             assert out_feature in children, "Available children: {}".format(", ".join(children))
         self.freeze(freeze_at)
 
-    def forward(self, x):
+    def forward(self, x, labels=None, return_cam=False):
         """
         Args:
             x: Tensor of shape (N,C,H,W). H, W must be a multiple of ``self.size_divisibility``.
@@ -370,11 +370,19 @@ class ResNet(Backbone):
             if name in self._out_features:
                 outputs[name] = x
         if self.num_classes is not None:
-            x = self.avgpool(x)
-            x = torch.flatten(x, 1)
-            x = self.fc(x)
+            out = self.avgpool(x)
+            out = torch.flatten(out, 1)
+            out = self.fc(out)
             if "linear" in self._out_features:
-                outputs["linear"] = x
+                outputs["linear"] = out
+
+        if return_cam:
+            feature_map = x.detach().clone()
+            cam_weights = self.fc.weight[labels]
+            cams = (cam_weights.view(*feature_map.shape[:2], 1, 1) *
+                    feature_map).mean(1, keepdim=False)
+            return cams
+
         return {"logits": x}
 
     def output_shape(self):
