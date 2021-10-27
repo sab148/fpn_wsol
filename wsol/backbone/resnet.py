@@ -383,7 +383,7 @@ class ResNet(Backbone):
                     feature_map).mean(1, keepdim=False)
             return cams
 
-        return {"logits": x}
+        return {"logits": out}
 
     def output_shape(self):
         return {
