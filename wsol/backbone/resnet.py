@@ -311,8 +311,8 @@ class ResNet(nn.Module):
             stages = stages[:num_stages]
         for i, blocks in enumerate(stages):
             assert len(blocks) > 0, len(blocks)
-            for block in blocks:
-                assert isinstance(block, CNNBlockBase), block
+            # for block in blocks:
+            #     assert isinstance(block, CNNBlockBase), block
 
             name = "layer" + str(i + 1)
             stage = nn.Sequential(*blocks)
