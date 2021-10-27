@@ -262,7 +262,7 @@ class BasicStem(CNNBlockBase):
         return x
 
 
-class ResNet(Backbone):
+class ResNet(nn.Module):
     """
     Implement :paper:`ResNet`.
     """
@@ -281,7 +281,7 @@ class ResNet(Backbone):
             freeze_at (int): The number of stages at the beginning to freeze.
                 see :meth:`freeze` for detailed explanation.
         """
-        super().__init__()
+        super(ResNet, self).__init__()
         self.inplanes = 64
 
         self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2,
