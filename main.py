@@ -136,7 +136,7 @@ class Trainer(object):
         #     adl_drop_threshold=self.args.adl_threshold,
         #     acol_drop_threshold=self.args.acol_threshold)
         
-        model = nn.DataParallel(model)
+     #   model = nn.DataParallel(model)
         model = model.cuda()
         print(model)
         return model
